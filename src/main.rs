@@ -2,6 +2,8 @@
 use std::io::{self, Write};
 
 fn main() {
+    let builtin_cmds = ["echo", "exit", "type"];
+
     loop {
         print!("$ ");
         io::stdout().flush().unwrap();
@@ -15,6 +17,15 @@ fn main() {
             match *cmd {
                 "echo" => println!("{}", args[1..].join(" ")),
                 "exit" => std::process::exit(0),
+                "type" => {
+                    if let Some(cmd_name) = args.get(1) {
+                        if builtin_cmds.contains(cmd_name) {
+                            println!("{} is a shell builtin", cmd_name);
+                        } else {
+                            println!("{}: not found", cmd_name);
+                        }
+                    }
+                }
                 _ => println!("{}: command not found", cmd),
             }
         }
