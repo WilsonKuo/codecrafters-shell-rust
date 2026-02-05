@@ -45,8 +45,17 @@ fn main() {
                 }
                 "cd" => {
                     if args.len() > 1 {
-                        if let Err(_) = std::env::set_current_dir(args[1]) {
-                            println!("cd: {}: No such file or directory", args[1])
+                        match args[1] {
+                            "~" => {
+                                if let Some(home_val) = std::env::var_os("HOME") {
+                                    std::env::set_current_dir(home_val).unwrap();
+                                }
+                            }
+                            _ => {
+                                if let Err(_) = std::env::set_current_dir(args[1]) {
+                                    println!("cd: {}: No such file or directory", args[1])
+                                }
+                            }
                         }
                     }
                 }
