@@ -3,7 +3,7 @@ use is_executable;
 use std::io::{self, Write};
 
 fn main() {
-    let builtin_cmds = ["echo", "exit", "type"];
+    let builtin_cmds = ["echo", "exit", "type", "pwd"];
 
     loop {
         print!("$ ");
@@ -40,6 +40,9 @@ fn main() {
                         }
                     }
                 }
+                "pwd" => {
+                    println!("{}", std::env::current_dir().unwrap().display());
+                }
                 _ => {
                     if let Some(path_val) = std::env::var_os("PATH") {
                         let mut find: bool = false;
@@ -47,7 +50,6 @@ fn main() {
                             let full_path = path.join(*cmd);
                             if is_executable::is_executable(&full_path) {
                                 find = true;
-                                // println!("{:?}", args[1..].join(" "));
                                 let output = std::process::Command::new(*cmd)
                                     .args(&args[1..])
                                     .output()
