@@ -40,7 +40,28 @@ fn main() {
                         }
                     }
                 }
-                _ => println!("{}: command not found", cmd),
+                _ => {
+                    if let Some(path_val) = std::env::var_os("PATH") {
+                        let mut find: bool = false;
+                        for path in std::env::split_paths(&path_val) {
+                            let full_path = path.join(*cmd);
+                            if is_executable::is_executable(&full_path) {
+                                find = true;
+                                // println!("{:?}", args[1..].join(" "));
+                                let output = std::process::Command::new(*cmd)
+                                    .args(&args[1..])
+                                    .output()
+                                    .expect("failed to execute process")
+                                    .stdout;
+                                print!("{}", String::from_utf8(output).expect("Not valid UTF-8"));
+                                break;
+                            }
+                        }
+                        if !find {
+                            println!("{}: command not found", cmd);
+                        }
+                    }
+                }
             }
         }
     }
