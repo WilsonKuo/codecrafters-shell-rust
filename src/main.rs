@@ -3,7 +3,7 @@ use is_executable;
 use std::io::{self, Write};
 
 fn main() {
-    let builtin_cmds = ["echo", "exit", "type", "pwd"];
+    let builtin_cmds = ["echo", "exit", "type", "pwd", "cd"];
 
     loop {
         print!("$ ");
@@ -42,6 +42,13 @@ fn main() {
                 }
                 "pwd" => {
                     println!("{}", std::env::current_dir().unwrap().display());
+                }
+                "cd" => {
+                    if args.len() > 1 {
+                        if let Err(_) = std::env::set_current_dir(args[1]) {
+                            println!("cd: {}: No such file or directory", args[1])
+                        }
+                    }
                 }
                 _ => {
                     if let Some(path_val) = std::env::var_os("PATH") {
