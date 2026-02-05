@@ -1,3 +1,4 @@
+use is_executable;
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -22,7 +23,20 @@ fn main() {
                         if builtin_cmds.contains(cmd_name) {
                             println!("{} is a shell builtin", cmd_name);
                         } else {
-                            println!("{}: not found", cmd_name);
+                            if let Some(path_val) = std::env::var_os("PATH") {
+                                let mut find: bool = false;
+                                for path in std::env::split_paths(&path_val) {
+                                    let full_path = path.join(cmd_name);
+                                    if is_executable::is_executable(&full_path) {
+                                        println!("{} is {}", cmd_name, full_path.to_str().unwrap());
+                                        find = true;
+                                        break;
+                                    }
+                                }
+                                if !find {
+                                    println!("{}: not found", cmd_name)
+                                }
+                            }
                         }
                     }
                 }
