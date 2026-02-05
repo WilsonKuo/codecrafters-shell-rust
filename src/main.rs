@@ -1,4 +1,5 @@
 use is_executable;
+use shlex;
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -13,7 +14,8 @@ fn main() {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
-        let args: Vec<&str> = input.split_whitespace().collect();
+        let args = shlex::split(&input).unwrap();
+        let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         if let Some(cmd) = args.first() {
             match *cmd {
                 "echo" => println!("{}", args[1..].join(" ")),
