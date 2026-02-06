@@ -3,6 +3,16 @@ use shlex;
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
+enum StreamType {
+    StandardInput,
+    StandardOutput,
+    StandardErr,
+}
+struct File {
+    f_name: String,
+    f_type: StreamType,
+}
+
 fn main() {
     let builtin_cmds = ["echo", "exit", "type", "pwd", "cd"];
 
@@ -18,15 +28,6 @@ fn main() {
         let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
         if let Some(cmd) = args.first() {
             match *cmd {
-                "echo" => {
-                    if args.len() > 3 && matches!(args[2], ">" | "1>") {
-                        if let Err(e) = std::fs::write(&args[3], format!("{}\n", &args[1])) {
-                            println!("{:?}", e);
-                        };
-                    } else {
-                        println!("{}", args[1..].join(" "));
-                    }
-                }
                 "exit" => std::process::exit(0),
                 "type" => {
                     if let Some(cmd_name) = args.get(1) {
@@ -73,17 +74,29 @@ fn main() {
                     if let Some(path_val) = std::env::var_os("PATH") {
                         let mut find: bool = false;
                         let mut args2 = Vec::new();
-                        let mut file = String::new();
+                        let mut file = File {
+                            f_name: String::new(),
+                            f_type: StreamType::StandardInput,
+                        };
 
                         let mut v_iter = args[1..].into_iter();
                         while let Some(arg) = v_iter.next() {
-                            if matches!(arg, &">" | &"1>") {
-                                if let Some(f) = v_iter.next() {
-                                    file = f.to_string();
-                                    break;
+                            match *arg {
+                                ">" | "1>" => {
+                                    if let Some(f) = v_iter.next() {
+                                        file.f_name = f.to_string();
+                                        file.f_type = StreamType::StandardOutput;
+                                        break;
+                                    }
                                 }
-                            } else {
-                                args2.push(arg);
+                                "2>" => {
+                                    if let Some(f) = v_iter.next() {
+                                        file.f_name = f.to_string();
+                                        file.f_type = StreamType::StandardErr;
+                                        break;
+                                    }
+                                }
+                                _ => args2.push(arg),
                             }
                         }
 
@@ -99,14 +112,22 @@ fn main() {
                                     String::from_utf8(output.stdout).expect("Not valid UTF-8");
                                 let stderr =
                                     String::from_utf8(output.stderr).expect("Not valid UTF-8");
-                                if file.is_empty() {
-                                    print!("{}", stdout);
-                                } else {
-                                    if let Err(e) = std::fs::write(&file, &stdout) {
-                                        println!("{:?}", e);
+
+                                match file.f_type {
+                                    StreamType::StandardInput => print!("{}", stdout),
+                                    StreamType::StandardOutput => {
+                                        if let Err(e) = std::fs::write(&file.f_name, &stdout) {
+                                            println!("{:?}", e);
+                                        }
+                                        print!("{}", stderr);
+                                    }
+                                    StreamType::StandardErr => {
+                                        if let Err(e) = std::fs::write(&file.f_name, &stderr) {
+                                            println!("{:?}", e);
+                                        }
+                                        print!("{}", stdout);
                                     }
                                 }
-                                print!("{}", stderr);
                                 break;
                             }
                         }
