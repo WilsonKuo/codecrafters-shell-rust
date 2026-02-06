@@ -21,6 +21,7 @@ impl Completer for MyHelper {
         ctx: &rustyline::Context<'_>,
     ) -> rustyline::Result<(usize, Vec<Self::Candidate>)> {
         let _ = (line, pos, ctx);
+
         let mut enteries: Vec<String> = Vec::new();
         if matches!(line, "ec" | "ech" | "echo") {
             enteries.push("echo ".to_string());
@@ -29,6 +30,7 @@ impl Completer for MyHelper {
         } else {
             print!("\x07");
         }
+
         Ok((0, enteries))
     }
 }

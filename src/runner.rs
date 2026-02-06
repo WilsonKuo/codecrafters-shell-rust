@@ -1,0 +1,123 @@
+use std::{io::Write, path::PathBuf};
+
+use crate::{
+    builtin_command::BuiltinCommand,
+    command::Command,
+    output::{Output, OutputConfig},
+};
+
+const BUILTIN_CMDS: [&str; 5] = ["echo", "exit", "type", "pwd", "cd"];
+
+fn exit() {
+    std::process::exit(0)
+}
+
+fn r#type(args: &Vec<&str>) {
+    if let Some(cmd_name) = args.get(1) {
+        if BUILTIN_CMDS.contains(cmd_name) {
+            println!("{} is a shell builtin", cmd_name);
+        } else {
+            if let Some(path_val) = std::env::var_os("PATH") {
+                let mut find: bool = false;
+                for path in std::env::split_paths(&path_val) {
+                    let full_path = path.join(cmd_name);
+                    if is_executable::is_executable(&full_path) {
+                        println!("{} is {}", cmd_name, full_path.to_str().unwrap());
+                        find = true;
+                        break;
+                    }
+                }
+                if !find {
+                    println!("{}: not found", cmd_name)
+                }
+            }
+        }
+    }
+}
+
+fn pwd() {
+    println!("{}", std::env::current_dir().unwrap().display());
+}
+
+fn cd(args: &Vec<&str>) {
+    if args.len() > 1 {
+        match args[1] {
+            "~" => {
+                if let Some(home_val) = std::env::var_os("HOME") {
+                    std::env::set_current_dir(home_val).unwrap();
+                }
+            }
+            _ => {
+                if let Err(_) = std::env::set_current_dir(args[1]) {
+                    println!("cd: {}: No such file or directory", args[1])
+                }
+            }
+        }
+    }
+}
+
+pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
+    let mut v_iter = args[1..].into_iter();
+    let mut args2 = Vec::new();
+    let mut symbol = "";
+    let mut file_path = PathBuf::new();
+    while let Some(&arg) = v_iter.next() {
+        if arg.contains(">") {
+            if let Some(f) = v_iter.next() {
+                file_path.push(f);
+                symbol = arg;
+            }
+        } else {
+            args2.push(arg);
+        }
+    }
+    let output = std::process::Command::new(command_path)
+        .args(&args2)
+        .output()
+        .expect("failed to execute process");
+    let stdout_string = String::from_utf8(output.stdout).expect("Not valid UTF-8");
+    let stderr_string = String::from_utf8(output.stderr).expect("Not valid UTF-8");
+    if let Ok(output_config) = OutputConfig::new(symbol, file_path) {
+        match output_config.stdout {
+            Output::File(mut file) => {
+                file.write(stdout_string.as_bytes()).unwrap();
+            }
+            Output::StdOut(mut stdout) => {
+                stdout.write(stdout_string.as_bytes()).unwrap();
+            }
+            Output::StdErr(mut stderr) => {
+                stderr.write(stderr_string.as_bytes()).unwrap();
+            }
+        }
+        match output_config.stderr {
+            Output::File(mut file) => {
+                file.write(stdout_string.as_bytes()).unwrap();
+            }
+            Output::StdOut(mut stdout) => {
+                stdout.write(stdout_string.as_bytes()).unwrap();
+            }
+            Output::StdErr(mut stderr) => {
+                stderr.write(stderr_string.as_bytes()).unwrap();
+            }
+        }
+    } else {
+        print!("{}", stdout_string);
+        print!("{}", stderr_string);
+    }
+}
+
+pub fn run(line: &String) {
+    let args = shlex::split(line).unwrap();
+    let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    if let Some(command_string) = args.first() {
+        if let Ok(command) = Command::try_from(command_string.to_string()) {
+            match command {
+                Command::Builtin(BuiltinCommand::Exit) => exit(),
+                Command::Builtin(BuiltinCommand::Type) => r#type(&args),
+                Command::Builtin(BuiltinCommand::Pwd) => pwd(),
+                Command::Builtin(BuiltinCommand::Cd) => cd(&args),
+                Command::Executable(command_path) => cmd(&args, command_path),
+            }
+        }
+    }
+}
