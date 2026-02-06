@@ -7,6 +7,8 @@ enum StreamType {
     StandardInput,
     StandardOutput,
     StandardErr,
+    StandardOutputAppend,
+    StandardErrAppend,
 }
 struct File {
     f_name: String,
@@ -96,6 +98,20 @@ fn main() {
                                         break;
                                     }
                                 }
+                                ">>" | "1>>" => {
+                                    if let Some(f) = v_iter.next() {
+                                        file.f_name = f.to_string();
+                                        file.f_type = StreamType::StandardOutputAppend;
+                                        break;
+                                    }
+                                }
+                                "2>>" => {
+                                    if let Some(f) = v_iter.next() {
+                                        file.f_name = f.to_string();
+                                        file.f_type = StreamType::StandardErrAppend;
+                                        break;
+                                    }
+                                }
                                 _ => args2.push(arg),
                             }
                         }
@@ -125,6 +141,32 @@ fn main() {
                                         if let Err(e) = std::fs::write(&file.f_name, &stderr) {
                                             println!("{:?}", e);
                                         }
+                                        print!("{}", stdout);
+                                    }
+                                    StreamType::StandardOutputAppend => {
+                                        if let Ok(mut f) = std::fs::OpenOptions::new()
+                                            .create(true)
+                                            .append(true)
+                                            .open(&file.f_name)
+                                        {
+                                            if let Err(_) = f.write(stdout.as_bytes()) {
+                                                // println!("{:?}", e);
+                                            }
+                                        }
+
+                                        print!("{}", stderr);
+                                    }
+                                    StreamType::StandardErrAppend => {
+                                        if let Ok(mut f) = std::fs::OpenOptions::new()
+                                            .create(true)
+                                            .append(true)
+                                            .open(&file.f_name)
+                                        {
+                                            if let Err(_) = f.write(stderr.as_bytes()) {
+                                                // println!("{:?}", e);
+                                            }
+                                        }
+
                                         print!("{}", stdout);
                                     }
                                 }
