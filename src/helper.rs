@@ -51,6 +51,20 @@ impl Completer for MyHelper {
                     }
                 });
                 file_names.sort();
+
+                let same_prefix = file_names.windows(2).all(|w| w[1].starts_with(&w[0]));
+                if same_prefix {
+                    file_names.iter().for_each(|file_name| {
+                        if file_name.len() > line.len() {
+                            enteries.push(file_name.clone());
+                        }
+                    });
+                    if let Some(last_entry) = enteries.last_mut() {
+                        last_entry.push(' ');
+                    }
+                    return Ok((0, enteries));
+                }
+
                 if file_names.len() == 1 {
                     enteries.push(format!("{} ", file_names[0]));
                 } else {
