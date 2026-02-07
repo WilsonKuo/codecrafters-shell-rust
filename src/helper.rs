@@ -45,21 +45,22 @@ impl Completer for MyHelper {
         } else {
             if let Some(paths) = PathFinder::new(line, true).find_executable_multiple() {
                 let mut file_names: Vec<String> = Vec::new();
-                paths.iter().for_each(|path| {
-                    if let Some(file_name) = path.file_name() {
-                        file_names.push(file_name.to_string_lossy().into_owned());
-                    }
-                });
+                file_names.extend(paths.iter().filter_map(|path| {
+                    path.file_name()
+                        .map(|file_name_string| file_name_string.to_string_lossy().into_owned())
+                }));
                 file_names.sort();
 
                 // Partial completions
                 let same_prefix = file_names.windows(2).all(|w| w[1].starts_with(&w[0]));
                 if same_prefix {
-                    file_names.iter().for_each(|file_name| {
-                        if file_name.len() > line.len() {
-                            entries.push(file_name.clone());
-                        }
-                    });
+                    entries.extend(
+                        file_names
+                            .iter()
+                            .filter(|file_name| file_name.len() > line.len())
+                            .cloned(),
+                    );
+
                     if let Some(last_entry) = entries.last_mut() {
                         last_entry.push(' ');
                     }
