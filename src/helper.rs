@@ -52,6 +52,7 @@ impl Completer for MyHelper {
                 });
                 file_names.sort();
 
+                // Partial completions
                 let same_prefix = file_names.windows(2).all(|w| w[1].starts_with(&w[0]));
                 if same_prefix {
                     file_names.iter().for_each(|file_name| {
@@ -65,9 +66,11 @@ impl Completer for MyHelper {
                     return Ok((0, entries));
                 }
 
+                // Executable completion
                 if file_names.len() == 1 {
                     entries.push(format!("{} ", file_names[0]));
                 } else {
+                    // Multiple completions
                     let current_count = self.counter.get();
                     if current_count == 0 {
                         print!("\x07");
