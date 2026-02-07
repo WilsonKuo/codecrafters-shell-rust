@@ -37,11 +37,11 @@ impl Completer for MyHelper {
             *self.last_line.borrow_mut() = line.to_string();
         }
 
-        let mut enteries: Vec<String> = Vec::new();
+        let mut entries: Vec<String> = Vec::new();
         if matches!(line, "ec" | "ech" | "echo") {
-            enteries.push("echo ".to_string());
+            entries.push("echo ".to_string());
         } else if matches!(line, "ex" | "exi" | "exit") {
-            enteries.push("exit ".to_string());
+            entries.push("exit ".to_string());
         } else {
             if let Some(paths) = PathFinder::new(line, true).find_executable_multiple() {
                 let mut file_names: Vec<String> = Vec::new();
@@ -56,24 +56,24 @@ impl Completer for MyHelper {
                 if same_prefix {
                     file_names.iter().for_each(|file_name| {
                         if file_name.len() > line.len() {
-                            enteries.push(file_name.clone());
+                            entries.push(file_name.clone());
                         }
                     });
-                    if let Some(last_entry) = enteries.last_mut() {
+                    if let Some(last_entry) = entries.last_mut() {
                         last_entry.push(' ');
                     }
-                    return Ok((0, enteries));
+                    return Ok((0, entries));
                 }
 
                 if file_names.len() == 1 {
-                    enteries.push(format!("{} ", file_names[0]));
+                    entries.push(format!("{} ", file_names[0]));
                 } else {
                     let current_count = self.counter.get();
                     if current_count == 0 {
                         print!("\x07");
                     } else {
                         println!("\n{}", file_names.join("  "));
-                        enteries.push(format!("{}", line));
+                        entries.push(format!("{}", line));
                         self.counter.set(0);
                     }
                     self.counter.set(current_count + 1);
@@ -83,7 +83,7 @@ impl Completer for MyHelper {
             }
         }
 
-        Ok((0, enteries))
+        Ok((0, entries))
     }
 }
 impl Highlighter for MyHelper {}
