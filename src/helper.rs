@@ -73,17 +73,13 @@ impl Completer for MyHelper {
                 } else {
                     // Multiple completions
                     let current_count = self.counter.get();
-                    if current_count == 0 {
-                        print!("\x07");
-                    } else {
+                    if current_count > 0 {
                         println!("\n{}", file_names.join("  "));
                         entries.push(format!("{}", line));
                         self.counter.set(0);
                     }
                     self.counter.set(current_count + 1);
                 }
-            } else {
-                print!("\x07");
             }
         }
 
