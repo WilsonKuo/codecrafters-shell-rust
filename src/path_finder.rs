@@ -44,4 +44,16 @@ impl PathFinder {
             .into_iter()
             .find(|candidate| is_executable::is_executable(candidate))
     }
+    pub fn find_executable_multiple(self) -> Option<Vec<PathBuf>> {
+        let results: Vec<PathBuf> = self
+            .candidates
+            .into_iter()
+            .filter(|candidate| is_executable::is_executable(candidate))
+            .collect();
+        if results.is_empty() {
+            None
+        } else {
+            Some(results)
+        }
+    }
 }
