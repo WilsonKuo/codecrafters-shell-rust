@@ -6,7 +6,7 @@ use crate::{
     output::{Output, OutputConfig},
 };
 
-const BUILTIN_CMDS: [&str; 5] = ["echo", "exit", "type", "pwd", "cd"];
+const BUILTIN_CMDS: [&str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
 
 fn exit() {
     std::process::exit(0)
@@ -54,6 +54,10 @@ fn cd(args: &Vec<&str>) {
             }
         }
     }
+}
+
+pub fn history() {
+    todo!();
 }
 
 pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
@@ -123,6 +127,7 @@ pub fn run(line: &String) {
                 Command::Builtin(BuiltinCommand::Type) => r#type(&args),
                 Command::Builtin(BuiltinCommand::Pwd) => pwd(),
                 Command::Builtin(BuiltinCommand::Cd) => cd(&args),
+                Command::Builtin(BuiltinCommand::History) => history(),
                 Command::Executable(command_path) => cmd(&args, command_path),
             }
         } else {
