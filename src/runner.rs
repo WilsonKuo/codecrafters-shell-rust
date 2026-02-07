@@ -71,10 +71,17 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
             args2.push(arg);
         }
     }
-    let output = std::process::Command::new(command_path)
-        .args(&args2)
-        .output()
-        .expect("failed to execute process");
+
+    let output = std::process::Command::new(
+        command_path
+            .file_name()
+            .unwrap() // This is already validated during the construction of the Command object
+            .to_string_lossy()
+            .into_owned(),
+    )
+    .args(&args2)
+    .output()
+    .expect("failed to execute process");
     let stdout_string = String::from_utf8(output.stdout).expect("Not valid UTF-8");
     let stderr_string = String::from_utf8(output.stderr).expect("Not valid UTF-8");
     if let Ok(output_config) = OutputConfig::new(symbol, file_path) {
@@ -85,16 +92,16 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
             Output::StdOut(mut stdout) => {
                 stdout.write(stdout_string.as_bytes()).unwrap();
             }
-            Output::StdErr(mut stderr) => {
-                stderr.write(stderr_string.as_bytes()).unwrap();
+            Output::StdErr(_) => {
+                panic!();
             }
         }
         match output_config.stderr {
             Output::File(mut file) => {
-                file.write(stdout_string.as_bytes()).unwrap();
+                file.write(stderr_string.as_bytes()).unwrap();
             }
-            Output::StdOut(mut stdout) => {
-                stdout.write(stdout_string.as_bytes()).unwrap();
+            Output::StdOut(_) => {
+                panic!();
             }
             Output::StdErr(mut stderr) => {
                 stderr.write(stderr_string.as_bytes()).unwrap();
@@ -118,6 +125,8 @@ pub fn run(line: &String) {
                 Command::Builtin(BuiltinCommand::Cd) => cd(&args),
                 Command::Executable(command_path) => cmd(&args, command_path),
             }
+        } else {
+            println!("{}: command not found", command_string);
         }
     }
 }

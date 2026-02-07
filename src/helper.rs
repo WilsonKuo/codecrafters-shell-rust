@@ -1,3 +1,5 @@
+use crate::path_finder::PathFinder;
+
 use rustyline::{
     Helper, completion::Completer, highlight::Highlighter, hint::Hinter, validate::Validator,
 };
@@ -28,7 +30,13 @@ impl Completer for MyHelper {
         } else if matches!(line, "ex" | "exi" | "exit") {
             enteries.push("exit ".to_string());
         } else {
-            print!("\x07");
+            if let Some(path) = PathFinder::new(line, true).find_executable() {
+                if let Some(file_name) = path.file_name() {
+                    enteries.push(format!("{} ", file_name.to_string_lossy().into_owned()));
+                }
+            } else {
+                print!("\x07");
+            }
         }
 
         Ok((0, enteries))

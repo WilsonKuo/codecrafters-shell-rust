@@ -15,7 +15,7 @@ impl TryFrom<String> for Command {
         if let Ok(builtin_command) = BuiltinCommand::try_from(value.clone()) {
             Ok(Self::Builtin(builtin_command))
         } else {
-            if let Some(path) = PathFinder::new(value).find_executable() {
+            if let Some(path) = PathFinder::new(&value, false).find_executable() {
                 Ok(Self::Executable(path))
             } else {
                 Err("Not a command".to_string())

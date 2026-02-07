@@ -37,7 +37,7 @@ impl OutputConfig {
                 stderr: Output::StdErr(io::stderr()),
             }),
             "2>>" => Ok(OutputConfig {
-                stdout: Output::StdErr(io::stderr()),
+                stdout: Output::StdOut(io::stdout()),
                 stderr: Output::File(
                     OpenOptions::new()
                         .create(true)
