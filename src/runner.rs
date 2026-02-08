@@ -1,10 +1,12 @@
-use std::{io::Write, path::PathBuf};
-
 use crate::{
     builtin_command::BuiltinCommand,
     command::Command,
+    helper::MyHelper,
     output::{Output, OutputConfig},
 };
+
+use rustyline::{Editor, history::MemHistory};
+use std::{io::Write, path::PathBuf};
 
 const BUILTIN_CMDS: [&str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
 
@@ -56,8 +58,10 @@ fn cd(args: &Vec<&str>) {
     }
 }
 
-pub fn history() {
-    todo!();
+pub fn history(rl: &Editor<MyHelper, MemHistory>) {
+    for (index, entry) in rl.history().into_iter().enumerate() {
+        println!("\t{}  {}", index + 1, entry);
+    }
 }
 
 pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
@@ -117,7 +121,8 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
     }
 }
 
-pub fn run(line: &String) {
+pub fn run(line: &String, rl: &mut Editor<MyHelper, MemHistory>) {
+    if let Ok(_) = rl.add_history_entry(line.clone()) {}
     let args = shlex::split(line).unwrap();
     let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     if let Some(command_string) = args.first() {
@@ -127,7 +132,7 @@ pub fn run(line: &String) {
                 Command::Builtin(BuiltinCommand::Type) => r#type(&args),
                 Command::Builtin(BuiltinCommand::Pwd) => pwd(),
                 Command::Builtin(BuiltinCommand::Cd) => cd(&args),
-                Command::Builtin(BuiltinCommand::History) => history(),
+                Command::Builtin(BuiltinCommand::History) => history(rl),
                 Command::Executable(command_path) => cmd(&args, command_path),
             }
         } else {
