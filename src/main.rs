@@ -13,8 +13,8 @@ use std::io::{self, Write};
 fn main() {
     let h = helper::MyHelper::new();
     let config = rustyline::Config::builder().build();
-    let m_history = rustyline::history::MemHistory::new();
-    let mut rl: rustyline::Editor<MyHelper, rustyline::history::MemHistory> =
+    let m_history = rustyline::history::FileHistory::new();
+    let mut rl: rustyline::Editor<MyHelper, rustyline::history::FileHistory> =
         rustyline::Editor::with_history(config, m_history).unwrap();
     rl.set_helper(Some(h));
 

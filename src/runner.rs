@@ -5,10 +5,7 @@ use crate::{
     output::{Output, OutputConfig},
 };
 
-use rustyline::{
-    Editor,
-    history::{History, MemHistory},
-};
+use rustyline::{Editor, history::FileHistory, history::History};
 use std::{io::Write, path::PathBuf};
 
 const BUILTIN_CMDS: [&str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
@@ -61,18 +58,41 @@ fn cd(args: &Vec<&str>) {
     }
 }
 
-pub fn history(args: &Vec<&str>, rl: &Editor<MyHelper, MemHistory>) {
+pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
     let history = rl.history();
-    let total = history.len();
+    match args.get(1).copied() {
+        Some("-r") => {
+            // 1. let variable = if let Pattern = Scrutinee { ValueIfMatch } else { ValueIfNoMatch };
+            // 2. let variable = if Condition { ValueIfTrue } else { ValueIfFalse };
+            // 3. Rust 1.65 (https://blog.rust-lang.org/2022/11/03/Rust-1.65.0/): let-else statements
+            let Some(file_name) = args.get(2) else {
+                print!("please provide history file name");
+                return;
+            };
 
-    let start_index = args
-        .get(1)
-        .and_then(|s| s.parse::<usize>().ok())
-        .map(|n| total.saturating_sub(n))
-        .unwrap_or(0);
+            if let Err(_) = rl.load_history(file_name) {
+                print!("fail to read {}", file_name);
+                return;
+            };
+        }
+        Some("-w") => {
+            todo!();
+        }
+        _ => {
+            // Handle the following cases:
+            // $ history
+            // $ history <n>
+            let total = history.len();
+            let start_index = args
+                .get(1)
+                .and_then(|s| s.parse::<usize>().ok())
+                .map(|n| total.saturating_sub(n))
+                .unwrap_or(0);
 
-    for (index, entry) in rl.history().into_iter().enumerate().skip(start_index) {
-        println!("\t{}  {}", index + 1, entry);
+            for (index, entry) in rl.history().into_iter().enumerate().skip(start_index) {
+                println!("\t{}  {}", index + 1, entry);
+            }
+        }
     }
 }
 
@@ -133,7 +153,7 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
     }
 }
 
-pub fn run(line: &String, rl: &mut Editor<MyHelper, MemHistory>) {
+pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
     if let Ok(_) = rl.add_history_entry(line.clone()) {}
     let args = shlex::split(line).unwrap();
     let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
