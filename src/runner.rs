@@ -55,7 +55,7 @@ fn cd(args: &Vec<&str>) {
                 }
             }
             _ => {
-                if let Err(_) = std::env::set_current_dir(args[1]) {
+                if std::env::set_current_dir(args[1]).is_err() {
                     println!("cd: {}: No such file or directory", args[1])
                 }
             }
@@ -83,7 +83,7 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
                 return;
             };
 
-            if let Err(_) = rl.load_history(file_name) {
+            if rl.load_history(file_name).is_err() {
                 print!("fail to read {}", file_name);
                 return;
             };
@@ -96,7 +96,7 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
 
             // Saves "#V2" as a flag in the first line.
             // Since this flag causes test failures, we must manually write the file content instead.
-            // if let Err(_) = rl.save_history(file_name) {
+            // if rl.save_history(file_name).is_err() {
             //     print!("fail to write {}", file_name);
             //     return;
             // }
@@ -113,7 +113,7 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
 
             // Saves "#V2" as a flag in the first line.
             // Since this flag causes test failures, we must manually write the file content instead.
-            // if let Err(_) = rl.append_history(std::path::Path::new(file_name)) {
+            // if rl.append_history(std::path::Path::new(file_name)).is_err() {
             //     print!("fail to append {}", file_name);
             //     return;
             // }
