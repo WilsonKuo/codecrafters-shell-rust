@@ -5,7 +5,10 @@ use crate::{
     output::{Output, OutputConfig},
 };
 
-use rustyline::{Editor, history::FileHistory, history::History};
+use rustyline::{
+    Editor,
+    history::{FileHistory, History},
+};
 use std::{
     io::Write,
     path::PathBuf,
@@ -15,7 +18,15 @@ use std::{
 const BUILTIN_CMDS: [&str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
 static HISTORY_IDX: AtomicUsize = AtomicUsize::new(0);
 
-fn exit() {
+fn exit(rl: &mut Editor<MyHelper, FileHistory>) {
+    let history = rl.history();
+    if let Some(path_string) = std::env::var_os("HISTFILE") {
+        let mut file = std::fs::File::create(path_string).unwrap();
+        for line in history {
+            std::writeln!(file, "{}", line).unwrap();
+        }
+    };
+
     std::process::exit(0)
 }
 
@@ -215,7 +226,7 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
     if let Some(command_string) = args.first() {
         if let Ok(command) = Command::try_from(command_string.to_string()) {
             match command {
-                Command::Builtin(BuiltinCommand::Exit) => exit(),
+                Command::Builtin(BuiltinCommand::Exit) => exit(rl),
                 Command::Builtin(BuiltinCommand::Type) => r#type(&args),
                 Command::Builtin(BuiltinCommand::Pwd) => pwd(),
                 Command::Builtin(BuiltinCommand::Cd) => cd(&args),

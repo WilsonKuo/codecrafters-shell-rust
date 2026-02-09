@@ -10,9 +10,11 @@ use crate::helper::MyHelper;
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-fn main() {
+fn main() -> rustyline::Result<()> {
     let h = helper::MyHelper::new();
-    let config = rustyline::Config::builder().build();
+    let config = rustyline::Config::builder()
+        .history_ignore_dups(false)?
+        .build();
     let m_history = rustyline::history::FileHistory::new();
     let mut rl: rustyline::Editor<MyHelper, rustyline::history::FileHistory> =
         rustyline::Editor::with_history(config, m_history).unwrap();
@@ -41,4 +43,6 @@ fn main() {
             }
         }
     }
+
+    Ok(())
 }
