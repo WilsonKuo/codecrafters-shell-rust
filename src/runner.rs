@@ -66,6 +66,14 @@ fn cd(args: &Vec<&str>) {
 pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
     let history = rl.history();
     match args.get(1).copied() {
+        Some("--init") => {
+            if let Some(path_string) = std::env::var_os("HISTFILE") {
+                if rl.load_history(&path_string).is_err() {
+                    print!("fail to read {:?}", path_string);
+                    return;
+                }
+            }
+        }
         Some("-r") => {
             // 1. let variable = if let Pattern = Scrutinee { ValueIfMatch } else { ValueIfNoMatch };
             // 2. let variable = if Condition { ValueIfTrue } else { ValueIfFalse };

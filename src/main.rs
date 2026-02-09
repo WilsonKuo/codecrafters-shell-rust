@@ -18,6 +18,9 @@ fn main() {
         rustyline::Editor::with_history(config, m_history).unwrap();
     rl.set_helper(Some(h));
 
+    let history_init = &vec!["history", "--init"];
+    runner::history(history_init, &mut rl);
+
     loop {
         let readline = rl.readline("$ ");
         match readline {
