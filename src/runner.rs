@@ -89,50 +89,50 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
             // 1. let variable = if let Pattern = Scrutinee { ValueIfMatch } else { ValueIfNoMatch };
             // 2. let variable = if Condition { ValueIfTrue } else { ValueIfFalse };
             // 3. Rust 1.65 (https://blog.rust-lang.org/2022/11/03/Rust-1.65.0/): let-else statements
-            let Some(file_name) = args.get(2) else {
+            let Some(file_path) = args.get(2) else {
                 print!("please provide history file name");
                 return;
             };
 
-            if rl.load_history(file_name).is_err() {
-                print!("fail to read {}", file_name);
+            if rl.load_history(file_path).is_err() {
+                print!("fail to read {}", file_path);
                 return;
             };
         }
         Some("-w") => {
-            let Some(file_name) = args.get(2) else {
+            let Some(file_path) = args.get(2) else {
                 print!("please provide history file name");
                 return;
             };
 
             // Saves "#V2" as a flag in the first line.
             // Since this flag causes test failures, we must manually write the file content instead.
-            // if rl.save_history(file_name).is_err() {
-            //     print!("fail to write {}", file_name);
+            // if rl.save_history(file_path).is_err() {
+            //     print!("fail to write {}", file_path);
             //     return;
             // }
-            let mut file = std::fs::File::create(file_name).unwrap();
+            let mut file = std::fs::File::create(file_path).unwrap();
             for line in history {
                 std::writeln!(file, "{}", line).unwrap();
             }
         }
         Some("-a") => {
-            let Some(file_name) = args.get(2) else {
+            let Some(file_path) = args.get(2) else {
                 print!("please provide history file name");
                 return;
             };
 
             // Saves "#V2" as a flag in the first line.
             // Since this flag causes test failures, we must manually write the file content instead.
-            // if rl.append_history(std::path::Path::new(file_name)).is_err() {
-            //     print!("fail to append {}", file_name);
+            // if rl.append_history(std::path::Path::new(file_path)).is_err() {
+            //     print!("fail to append {}", file_path);
             //     return;
             // }
 
             let mut file = std::fs::OpenOptions::new()
                 .create(true)
                 .append(true)
-                .open(file_name)
+                .open(file_path)
                 .unwrap();
             for entry in rl
                 .history()
