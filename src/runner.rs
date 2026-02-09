@@ -76,7 +76,21 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
             };
         }
         Some("-w") => {
-            todo!();
+            let Some(file_name) = args.get(2) else {
+                print!("please provide history file name");
+                return;
+            };
+
+            // Saves "#V2" as a flag in the first line.
+            // Since this flag causes test failures, we must manually write the file content instead.
+            // if let Err(_) = rl.save_history(file_name) {
+            //     print!("fail to write {}", file_name);
+            //     return;
+            // }
+            let mut file = std::fs::File::create(file_name).unwrap();
+            for line in history {
+                std::writeln!(file, "{}", line).unwrap();
+            }
         }
         _ => {
             // Handle the following cases:
