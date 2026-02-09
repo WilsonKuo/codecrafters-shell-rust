@@ -6,9 +6,14 @@ use crate::{
 };
 
 use rustyline::{Editor, history::FileHistory, history::History};
-use std::{io::Write, path::PathBuf};
+use std::{
+    io::Write,
+    path::PathBuf,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 const BUILTIN_CMDS: [&str; 6] = ["echo", "exit", "type", "pwd", "cd", "history"];
+static HISTORY_IDX: AtomicUsize = AtomicUsize::new(0);
 
 fn exit() {
     std::process::exit(0)
@@ -91,6 +96,34 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
             for line in history {
                 std::writeln!(file, "{}", line).unwrap();
             }
+        }
+        Some("-a") => {
+            let Some(file_name) = args.get(2) else {
+                print!("please provide history file name");
+                return;
+            };
+
+            // Saves "#V2" as a flag in the first line.
+            // Since this flag causes test failures, we must manually write the file content instead.
+            // if let Err(_) = rl.append_history(std::path::Path::new(file_name)) {
+            //     print!("fail to append {}", file_name);
+            //     return;
+            // }
+
+            let mut file = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(file_name)
+                .unwrap();
+            for entry in rl
+                .history()
+                .iter()
+                .skip(HISTORY_IDX.load(Ordering::Relaxed))
+            {
+                writeln!(file, "{}", entry).unwrap();
+            }
+
+            HISTORY_IDX.store(history.len(), Ordering::Relaxed);
         }
         _ => {
             // Handle the following cases:
