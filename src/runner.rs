@@ -240,16 +240,23 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
     });
     if all_executable && (pipeline.len() > 1) {
         let mut iter = pipeline.iter().peekable();
-        let mut previous_command = None;
+        let mut children: Vec<std::process::Child> = Vec::new();
+        let mut previous_stdout: Option<std::process::ChildStdout> = None;
         while let Some(command_vec) = iter.next() {
             let command = command_vec[0];
             let args = &command_vec[1..];
 
             // https://doc.rust-lang.org/std/process/struct.Stdio.html#impl-From%3CChildStdout%3E-for-Stdio
-            let stdin = previous_command.map_or(
-                std::process::Stdio::inherit(),
-                |child: std::process::Child| std::process::Stdio::from(child.stdout.unwrap()),
-            );
+            let stdin = previous_stdout
+                // We use .take() to transfer ownership of the pipe to the current process,
+                // replacing it with None to keep the variable valid.
+                // Note: If we guaranteed that 'previous_stdout' is re-initialized (assigned a new value)
+                // on *every* possible path before the loop restarts, .take() could technically be removed.
+                // However, keeping .take() is safer and prevents compile errors if the logic changes.
+                .take()
+                .map_or(std::process::Stdio::inherit(), |stdout| {
+                    std::process::Stdio::from(stdout)
+                });
             let stdout = if iter.peek().is_some() {
                 std::process::Stdio::piped()
             } else {
@@ -262,19 +269,22 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
                 .stdout(stdout)
                 .spawn();
             match current_command {
-                Ok(child) => {
-                    previous_command = Some(child);
+                Ok(mut child) => {
+                    if iter.peek().is_some() {
+                        previous_stdout = child.stdout.take();
+                    }
+                    children.push(child);
                 }
                 Err(e) => {
-                    previous_command = None;
+                    previous_stdout = None;
                     println!("error: {}", e);
                 }
             }
         }
-        if let Some(last_child) = previous_command {
-            let _ = last_child.wait_with_output();
-        }
 
+        for mut child in children {
+            let _ = child.wait();
+        }
         return;
     }
 
