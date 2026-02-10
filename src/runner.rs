@@ -242,9 +242,9 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
         let mut iter = pipeline.iter().peekable();
         let mut children: Vec<std::process::Child> = Vec::new();
         let mut previous_stdout: Option<std::process::ChildStdout> = None;
-        while let Some(command_vec) = iter.next() {
-            let command = command_vec[0];
-            let args = &command_vec[1..];
+        while let Some(stage) = iter.next() {
+            let command = stage[0];
+            let args = &stage[1..];
 
             // https://doc.rust-lang.org/std/process/struct.Stdio.html#impl-From%3CChildStdout%3E-for-Stdio
             let stdin = previous_stdout
