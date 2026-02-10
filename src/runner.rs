@@ -1,8 +1,6 @@
 use crate::{
-    builtin_command::BuiltinCommand,
-    command::Command,
-    helper::MyHelper,
-    output::{Output, OutputConfig},
+    builtin_command::BuiltinCommand, command::Command, helper::MyHelper,
+    output_config::OutputConfig,
 };
 
 use rustyline::{
@@ -190,29 +188,9 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
     .expect("failed to execute process");
     let stdout_string = String::from_utf8(output.stdout).expect("Not valid UTF-8");
     let stderr_string = String::from_utf8(output.stderr).expect("Not valid UTF-8");
-    if let Ok(output_config) = OutputConfig::new(symbol, file_path) {
-        match output_config.stdout {
-            Output::File(mut file) => {
-                file.write(stdout_string.as_bytes()).unwrap();
-            }
-            Output::StdOut(mut stdout) => {
-                stdout.write(stdout_string.as_bytes()).unwrap();
-            }
-            Output::StdErr(_) => {
-                panic!();
-            }
-        }
-        match output_config.stderr {
-            Output::File(mut file) => {
-                file.write(stderr_string.as_bytes()).unwrap();
-            }
-            Output::StdOut(_) => {
-                panic!();
-            }
-            Output::StdErr(mut stderr) => {
-                stderr.write(stderr_string.as_bytes()).unwrap();
-            }
-        }
+    if let Ok(mut output_config) = OutputConfig::new(symbol, file_path) {
+        let _ = output_config.stdout.write(stdout_string.as_bytes());
+        let _ = output_config.stderr.write(stderr_string.as_bytes());
     } else {
         print!("{}", stdout_string);
         print!("{}", stderr_string);

@@ -1,7 +1,6 @@
 use std::{
-    fs::{File, OpenOptions},
-    io::{self, Stderr, Stdout},
-    path::PathBuf,
+    fs::File,
+    io::{self, Stderr, Stdout, Write},
 };
 
 pub enum Output {
@@ -10,43 +9,19 @@ pub enum Output {
     StdErr(Stderr),
 }
 
-pub struct OutputConfig {
-    pub stdout: Output,
-    pub stderr: Output,
-}
-
-impl OutputConfig {
-    pub fn new(symbol: &str, file_path: PathBuf) -> Result<Self, ()> {
-        match symbol {
-            ">" | "1>" => Ok(OutputConfig {
-                stdout: Output::File(File::create(file_path).unwrap()),
-                stderr: Output::StdErr(io::stderr()),
-            }),
-            "2>" => Ok(OutputConfig {
-                stdout: Output::StdOut(io::stdout()),
-                stderr: Output::File(File::create(file_path).unwrap()),
-            }),
-            ">>" | "1>>" => Ok(OutputConfig {
-                stdout: Output::File(
-                    OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open(file_path)
-                        .unwrap(),
-                ),
-                stderr: Output::StdErr(io::stderr()),
-            }),
-            "2>>" => Ok(OutputConfig {
-                stdout: Output::StdOut(io::stdout()),
-                stderr: Output::File(
-                    OpenOptions::new()
-                        .create(true)
-                        .append(true)
-                        .open(file_path)
-                        .unwrap(),
-                ),
-            }),
-            _ => Err(()),
+impl Write for Output {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        match self {
+            Output::StdOut(out) => out.write(buf),
+            Output::StdErr(err) => err.write(buf),
+            Output::File(f) => f.write(buf),
+        }
+    }
+    fn flush(&mut self) -> io::Result<()> {
+        match self {
+            Output::StdOut(out) => out.flush(),
+            Output::StdErr(err) => err.flush(),
+            Output::File(f) => f.flush(),
         }
     }
 }

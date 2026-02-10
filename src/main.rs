@@ -2,6 +2,7 @@ mod builtin_command;
 mod command;
 mod helper;
 mod output;
+mod output_config;
 mod path_finder;
 mod runner;
 
