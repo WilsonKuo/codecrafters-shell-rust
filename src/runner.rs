@@ -223,6 +223,61 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
     if let Ok(_) = rl.add_history_entry(line.clone()) {}
     let args = shlex::split(line).unwrap();
     let args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+
+    let pipeline: Vec<Vec<&str>> = args
+        .split(|&item| item == "|")
+        .map(|slice| slice.to_vec())
+        .collect();
+
+    // Optimization: If the pipeline consists entirely of external commands,
+    // we can chain their stdio handles directly. This allows the OS to
+    // manage data flow via pipes and run processes concurrently.
+    let all_executable = pipeline.iter().all(|command| {
+        matches!(
+            Command::try_from(command[0].to_string()),
+            Ok(Command::Executable(_))
+        )
+    });
+    if all_executable && (pipeline.len() > 1) {
+        let mut iter = pipeline.iter().peekable();
+        let mut previous_command = None;
+        while let Some(command_vec) = iter.next() {
+            let command = command_vec[0];
+            let args = &command_vec[1..];
+
+            // https://doc.rust-lang.org/std/process/struct.Stdio.html#impl-From%3CChildStdout%3E-for-Stdio
+            let stdin = previous_command.map_or(
+                std::process::Stdio::inherit(),
+                |child: std::process::Child| std::process::Stdio::from(child.stdout.unwrap()),
+            );
+            let stdout = if iter.peek().is_some() {
+                std::process::Stdio::piped()
+            } else {
+                std::process::Stdio::inherit()
+            };
+
+            let current_command = std::process::Command::new(command)
+                .args(args)
+                .stdin(stdin)
+                .stdout(stdout)
+                .spawn();
+            match current_command {
+                Ok(child) => {
+                    previous_command = Some(child);
+                }
+                Err(e) => {
+                    previous_command = None;
+                    println!("error: {}", e);
+                }
+            }
+        }
+        if let Some(last_child) = previous_command {
+            let _ = last_child.wait_with_output();
+        }
+
+        return;
+    }
+
     if let Some(command_string) = args.first() {
         if let Ok(command) = Command::try_from(command_string.to_string()) {
             match command {
