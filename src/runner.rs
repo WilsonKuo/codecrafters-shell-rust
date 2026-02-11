@@ -28,34 +28,38 @@ fn exit(rl: &mut Editor<MyHelper, FileHistory>) {
     std::process::exit(0)
 }
 
-fn r#type(args: &Vec<&str>) {
+fn r#type(args: &Vec<&str>, result: &mut Option<String>) {
+    *result = None;
     if let Some(cmd_name) = args.get(1) {
         if BUILTIN_CMDS.contains(cmd_name) {
-            println!("{} is a shell builtin", cmd_name);
+            *result = Some(format!("{} is a shell builtin\n", cmd_name));
         } else {
             if let Some(path_val) = std::env::var_os("PATH") {
                 let mut find: bool = false;
                 for path in std::env::split_paths(&path_val) {
                     let full_path = path.join(cmd_name);
                     if is_executable::is_executable(&full_path) {
-                        println!("{} is {}", cmd_name, full_path.to_str().unwrap());
+                        *result =
+                            Some(format!("{} is {}\n", cmd_name, full_path.to_str().unwrap()));
                         find = true;
                         break;
                     }
                 }
                 if !find {
-                    println!("{}: not found", cmd_name)
+                    *result = Some(format!("{}: not found\n", cmd_name));
                 }
             }
         }
     }
 }
 
-fn pwd() {
+fn pwd(result: &mut Option<String>) {
+    *result = None;
     println!("{}", std::env::current_dir().unwrap().display());
 }
 
-fn cd(args: &Vec<&str>) {
+fn cd(args: &Vec<&str>, result: &mut Option<String>) {
+    *result = None;
     if args.len() > 1 {
         match args[1] {
             "~" => {
@@ -72,7 +76,12 @@ fn cd(args: &Vec<&str>) {
     }
 }
 
-pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
+pub fn history(
+    args: &Vec<&str>,
+    rl: &mut Editor<MyHelper, FileHistory>,
+    result: &mut Option<String>,
+) {
+    *result = None;
     let history = rl.history();
     match args.get(1).copied() {
         Some("--init") => {
@@ -152,15 +161,16 @@ pub fn history(args: &Vec<&str>, rl: &mut Editor<MyHelper, FileHistory>) {
                 .and_then(|s| s.parse::<usize>().ok())
                 .map(|n| total.saturating_sub(n))
                 .unwrap_or(0);
+            let s = result.insert(String::new());
 
             for (index, entry) in rl.history().into_iter().enumerate().skip(start_index) {
-                println!("\t{}  {}", index + 1, entry);
+                s.push_str(&format!("    {}  {}\n", index + 1, entry));
             }
         }
     }
 }
 
-pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
+pub fn cmd(args: &Vec<&str>, command_path: PathBuf, result: &mut Option<String>) {
     let mut v_iter = args[1..].into_iter();
     let mut args2 = Vec::new();
     let mut symbol = "";
@@ -176,24 +186,44 @@ pub fn cmd(args: &Vec<&str>, command_path: PathBuf) {
         }
     }
 
-    let output = std::process::Command::new(
+    let mut child = std::process::Command::new(
         command_path
             .file_name()
             .unwrap() // This is already validated during the construction of the Command object
             .to_string_lossy()
             .into_owned(),
     )
+    .stdin(std::process::Stdio::piped())
+    .stdout(std::process::Stdio::piped())
+    .stderr(std::process::Stdio::piped())
     .args(&args2)
-    .output()
+    .spawn()
     .expect("failed to execute process");
+
+    {
+        let mut stdin = child.stdin.take().expect("Failed to open stdin");
+        if let Some(content) = result {
+            stdin
+                .write_all(content.as_bytes())
+                .expect("failed to write to stdin")
+        }
+    }
+
+    let output = child.wait_with_output().expect("Failed to read stdout");
     let stdout_string = String::from_utf8(output.stdout).expect("Not valid UTF-8");
     let stderr_string = String::from_utf8(output.stderr).expect("Not valid UTF-8");
     if let Ok(mut output_config) = OutputConfig::new(symbol, file_path) {
         let _ = output_config.stdout.write(stdout_string.as_bytes());
         let _ = output_config.stderr.write(stderr_string.as_bytes());
     } else {
-        print!("{}", stdout_string);
-        print!("{}", stderr_string);
+        let s = result.insert(String::new());
+        if !stdout_string.is_empty() {
+            s.push_str(&stdout_string);
+        }
+        if !stderr_string.is_empty() {
+            s.push_str(&stderr_string);
+        }
+        return;
     }
 }
 
@@ -266,18 +296,28 @@ pub fn run(line: &String, rl: &mut Editor<MyHelper, FileHistory>) {
         return;
     }
 
-    if let Some(command_string) = args.first() {
-        if let Ok(command) = Command::try_from(command_string.to_string()) {
-            match command {
-                Command::Builtin(BuiltinCommand::Exit) => exit(rl),
-                Command::Builtin(BuiltinCommand::Type) => r#type(&args),
-                Command::Builtin(BuiltinCommand::Pwd) => pwd(),
-                Command::Builtin(BuiltinCommand::Cd) => cd(&args),
-                Command::Builtin(BuiltinCommand::History) => history(&args, rl),
-                Command::Executable(command_path) => cmd(&args, command_path),
+    let mut result: Option<String> = None;
+    for stage in pipeline.iter() {
+        if let Some(command_string) = stage.first() {
+            if let Ok(command) = Command::try_from(command_string.to_string()) {
+                match command {
+                    Command::Builtin(BuiltinCommand::Exit) => exit(rl),
+                    Command::Builtin(BuiltinCommand::Type) => r#type(stage, &mut result),
+                    Command::Builtin(BuiltinCommand::Pwd) => pwd(&mut result),
+                    Command::Builtin(BuiltinCommand::Cd) => cd(stage, &mut result),
+                    Command::Builtin(BuiltinCommand::History) => history(stage, rl, &mut result),
+                    Command::Executable(command_path) => cmd(stage, command_path, &mut result),
+                }
+            } else {
+                println!("{}: command not found", command_string);
+                if pipeline.len() > 1 {
+                    eprintln!("pipeline execution aborted due to missing command");
+                }
+                return;
             }
-        } else {
-            println!("{}: command not found", command_string);
         }
+    }
+    if result.is_some() {
+        print!("{}", result.unwrap());
     }
 }

@@ -22,7 +22,7 @@ fn main() -> rustyline::Result<()> {
     rl.set_helper(Some(h));
 
     let history_init = &vec!["history", "--init"];
-    runner::history(history_init, &mut rl);
+    runner::history(history_init, &mut rl, &mut None);
 
     loop {
         let readline = rl.readline("$ ");
