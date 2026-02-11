@@ -1,35 +1,33 @@
+# Build Your Own Shell (Rust)
+
 [![progress-banner](https://backend.codecrafters.io/progress/shell/1b45c1e5-6de1-4249-9689-9f1eb08071a7)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
-This is a starting point for Rust solutions to the
-["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview).
+This is my implementation of the ["Build Your Own Shell" Challenge](https://app.codecrafters.io/courses/shell/overview) provided by CodeCrafters, written in **Rust**. 
 
-In this challenge, you'll build your own POSIX compliant shell that's capable of
-interpreting shell commands, running external programs and builtin commands like
-cd, pwd, echo and more. Along the way, you'll learn about shell command parsing,
-REPLs, builtin commands, and more.
+It is a POSIX-compliant shell capable of interpreting shell commands, running built-in commands, and executing external programs.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Features
 
-# Passing the first stage
+* **Interactive REPL**: Built with `rustyline` to support command history and auto-completion.
+* **Built-in Commands**: Supports standard built-ins including `cd`, `pwd`, `echo`, `exit`, `type`, and `history`.
+* **Program Execution**: Resolves and executes external programs found in the system's `$PATH`.
+* **Output Redirection**: Supports standard output and standard error redirection (e.g., `>`, `>>`, `1>`, `2>`).
+* **Pipelining**: Can chain multiple commands together using pipes (`|`), allowing concurrent execution of external commands.
 
-The entry point for your `shell` implementation is in `src/main.rs`. Study and
-uncomment the relevant code, and push your changes to pass the first stage:
+## Usage
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
+You can build and run the shell locally using the provided script:
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd codecrafters-shell-rust
+
+# Run the shell
+./your_program.sh
 ```
 
-Time to move on to the next stage!
-
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cargo (1.92)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+Alternatively, you can use Cargo directly:
+```bash
+cargo run --release
+```
