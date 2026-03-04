@@ -1,4 +1,3 @@
-use is_executable;
 use std::path::PathBuf;
 
 pub struct PathFinder {
@@ -6,7 +5,7 @@ pub struct PathFinder {
 }
 
 impl PathFinder {
-    pub fn new(executable: &str, prefix: bool) -> Self {
+    pub fn new(target: &str, prefix: bool) -> Self {
         let path_string = std::env::var_os("PATH").expect("PATH environment variable must be set");
         let mut paths: Vec<PathBuf> = std::env::split_paths(&path_string).collect();
         if let Ok(current_dir) = std::env::current_dir() {
@@ -23,7 +22,7 @@ impl PathFinder {
                             let entry = entry.ok()?;
                             let file_name = entry.file_name();
                             let file_name_str = file_name.to_str()?;
-                            if file_name_str.starts_with(executable) {
+                            if file_name_str.starts_with(target) {
                                 let path = entry.path();
                                 Some(path)
                             } else {
@@ -37,7 +36,7 @@ impl PathFinder {
                 .into_iter()
                 .map(|dir| {
                     let mut path = dir;
-                    path.push(executable);
+                    path.push(target);
                     path
                 })
                 .collect()

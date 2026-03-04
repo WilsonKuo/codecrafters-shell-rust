@@ -75,7 +75,7 @@ impl Completer for MyHelper {
                     let current_count = self.counter.get();
                     if current_count > 0 {
                         println!("\n{}", file_names.join("  "));
-                        entries.push(format!("{}", line));
+                        entries.push(line.to_string());
                         self.counter.set(0);
                     }
                     self.counter.set(current_count + 1);
