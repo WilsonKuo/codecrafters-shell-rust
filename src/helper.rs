@@ -83,6 +83,23 @@ impl Completer for MyHelper {
             }
         }
 
+        let substrs: Vec<&str> = line.split(" ").collect();
+        if substrs.len() > 1 {
+            let curr_arg = substrs.last().unwrap();
+            if let Some(paths) = PathFinder::new(curr_arg, true).find_file_multiple() {
+                for path in paths {
+                    let postfix = if path.is_dir() { "/" } else { " " };
+                    if let Some(file_name_os) = path.file_name()
+                        && let Some(file_name_str) = file_name_os.to_str()
+                    {
+                        let replaced_line =
+                            format!("{}{}", line.replace(curr_arg, file_name_str), postfix);
+                        entries.push(replaced_line);
+                    }
+                }
+            }
+        }
+
         Ok((0, entries))
     }
 }
