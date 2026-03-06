@@ -109,6 +109,7 @@ impl Completer for MyHelper {
             let curr_arg = substrs.last().unwrap();
             if let Some(mut paths) = ArgCompletor::new(curr_arg).find_arg_multiple() {
                 paths.sort();
+                // File completion
                 if paths.len() == 1 {
                     let postfix = if paths[0].is_dir() { "/" } else { " " };
                     let replaced_line = format!(
@@ -118,6 +119,28 @@ impl Completer for MyHelper {
                     );
                     entries.push(replaced_line);
                 } else {
+                    // Partial completions
+                    let same_prefix = paths
+                        .windows(2)
+                        .all(|w| w[1].to_str().unwrap().starts_with(w[0].to_str().unwrap()));
+                    if same_prefix {
+                        let mut idx = 0;
+                        for (curr_idx, path) in paths.iter().enumerate() {
+                            if path.to_str().unwrap().len() > curr_arg.len() {
+                                idx = curr_idx;
+                                break;
+                            }
+                        }
+                        let postfix = if paths[idx].is_dir() { "" } else { " " };
+                        let replaced_line = format!(
+                            "{}{}",
+                            line.replace(curr_arg, paths[idx].to_str().unwrap()),
+                            postfix
+                        );
+                        entries.push(replaced_line);
+                        return Ok((0, entries));
+                    }
+                    // Multiple matches
                     for path in paths {
                         let postfix = if path.is_dir() { "/" } else { "" };
                         let replaced_line = format!(
