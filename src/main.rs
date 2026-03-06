@@ -1,3 +1,4 @@
+mod arg_completor;
 mod builtin_command;
 mod command;
 mod helper;
