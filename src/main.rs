@@ -15,6 +15,7 @@ use std::io::{self, Write};
 fn main() -> rustyline::Result<()> {
     let h = helper::MyHelper::new();
     let config = rustyline::Config::builder()
+        .completion_type(rustyline::CompletionType::List)
         .history_ignore_dups(false)?
         .build();
     let m_history = rustyline::history::FileHistory::new();
