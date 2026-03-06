@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-pub struct ArgCompletor {
+pub struct PathCompletor {
     candidates: Vec<PathBuf>,
 }
 
-impl ArgCompletor {
+impl PathCompletor {
     pub fn new(target: &str) -> Self {
         let Ok(mut current_dir) = std::env::current_dir() else {
             panic!("current_dir is not working");
@@ -40,7 +40,7 @@ impl ArgCompletor {
             .collect();
         Self { candidates }
     }
-    pub fn find_arg_multiple(self) -> Option<Vec<PathBuf>> {
+    pub fn find_path_multiple(self) -> Option<Vec<PathBuf>> {
         if self.candidates.is_empty() {
             None
         } else {

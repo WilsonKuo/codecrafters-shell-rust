@@ -1,6 +1,6 @@
 use std::cell::{Cell, RefCell};
 
-use crate::arg_completor::ArgCompletor;
+use crate::path_completor::PathCompletor;
 use crate::path_finder::PathFinder;
 
 use rustyline::{
@@ -93,7 +93,7 @@ impl Completer for MyHelper {
             return Ok((0, entries));
         }
         if substrs.len() == 1 {
-            if let Some(paths) = ArgCompletor::new("").find_arg_multiple() {
+            if let Some(paths) = PathCompletor::new("").find_path_multiple() {
                 for path in paths {
                     let postfix = if path.is_dir() { "/" } else { " " };
                     let mut space = "";
@@ -107,7 +107,7 @@ impl Completer for MyHelper {
             }
         } else if substrs.len() > 1 {
             let curr_arg = substrs.last().unwrap();
-            if let Some(mut paths) = ArgCompletor::new(curr_arg).find_arg_multiple() {
+            if let Some(mut paths) = PathCompletor::new(curr_arg).find_path_multiple() {
                 paths.sort();
                 // File completion
                 if paths.len() == 1 {

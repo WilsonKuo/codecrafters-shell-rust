@@ -1,9 +1,9 @@
-mod arg_completor;
 mod builtin_command;
 mod command;
 mod helper;
 mod output;
 mod output_config;
+mod path_completor;
 mod path_finder;
 mod runner;
 
