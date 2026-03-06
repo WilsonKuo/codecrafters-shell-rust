@@ -96,21 +96,39 @@ impl Completer for MyHelper {
             if let Some(paths) = ArgCompletor::new("").find_arg_multiple() {
                 for path in paths {
                     let postfix = if path.is_dir() { "/" } else { " " };
-                    let replaced_line = format!("{}{}{}", line, path.to_str().unwrap(), postfix);
+                    let mut space = "";
+                    if !line.ends_with(" ") {
+                        space = " ";
+                    }
+                    let replaced_line =
+                        format!("{}{}{}{}", line, space, path.to_str().unwrap(), postfix);
                     entries.push(replaced_line);
                 }
             }
         } else if substrs.len() > 1 {
             let curr_arg = substrs.last().unwrap();
-            if let Some(paths) = ArgCompletor::new(curr_arg).find_arg_multiple() {
-                for path in paths {
-                    let postfix = if path.is_dir() { "/" } else { " " };
+            if let Some(mut paths) = ArgCompletor::new(curr_arg).find_arg_multiple() {
+                paths.sort();
+                if paths.len() == 1 {
+                    let postfix = if paths[0].is_dir() { "/" } else { " " };
                     let replaced_line = format!(
                         "{}{}",
-                        line.replace(curr_arg, path.to_str().unwrap()),
+                        line.replace(curr_arg, paths[0].to_str().unwrap()),
                         postfix
                     );
                     entries.push(replaced_line);
+                } else {
+                    for path in paths {
+                        let postfix = if path.is_dir() { "/" } else { "" };
+                        let replaced_line = format!(
+                            "{}{}",
+                            line.replace(curr_arg, path.to_str().unwrap())
+                                .replace(substrs[0], "")
+                                .trim(),
+                            postfix
+                        );
+                        entries.push(replaced_line);
+                    }
                 }
             }
         }
