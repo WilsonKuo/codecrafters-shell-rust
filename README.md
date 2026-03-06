@@ -13,6 +13,7 @@ It is a POSIX-compliant shell capable of interpreting shell commands, running bu
 * **Program Execution**: Resolves and executes external programs found in the system's `$PATH`.
 * **Output Redirection**: Supports standard output and standard error redirection (e.g., `>`, `>>`, `1>`, `2>`).
 * **Pipelining**: Can chain multiple commands together using pipes (`|`), allowing concurrent execution of external commands.
+* **Path Auto-completion**: Tab-completion for file and directory arguments, supporting partial matches.
 
 ## Usage
 
